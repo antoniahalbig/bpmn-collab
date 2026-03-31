@@ -95,6 +95,12 @@ export function BpmnEditor({
   const stableSendXmlUpdate = useCallback(sendXmlUpdate, []) // eslint-disable-line react-hooks/exhaustive-deps
   const syncOverlaysRef = useRef<((c: Comment[]) => void) | null>(null)
   const commentsRef = useRef<Comment[]>(comments)
+  const lastActivityRef = useRef<{
+    command: string
+    action: string
+    elementId: string | null
+    timestamp: number
+  } | null>(null)
   commentsRef.current = comments // updated on every render, no re-render side-effect
 
   // When comments change (from any source), re-render the overlay badges.
@@ -173,7 +179,30 @@ export function BpmnEditor({
         if (importCountRef.current > 0) return
 
         const action = describeCommand(command, context)
-        if (action) sendActivity(action)
+        if (!action) return
+
+        const element = context.shape ?? context.shapes?.[0] ?? context.connection ?? context.connections?.[0]
+        const elementId = element?.id ?? null
+        const lastActivity = lastActivityRef.current
+
+        if (
+          command === 'shape.move' &&
+          lastActivity?.command === 'elements.move' &&
+          lastActivity.action === action &&
+          lastActivity.elementId === elementId &&
+          Date.now() - lastActivity.timestamp < 100
+        ) {
+          return
+        }
+
+        lastActivityRef.current = {
+          command,
+          action,
+          elementId,
+          timestamp: Date.now(),
+        }
+
+        sendActivity(action)
       })
 
       // commandStack.changed: save XML for any local edit or undo/redo 
