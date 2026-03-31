@@ -13,14 +13,11 @@ export function UserList({ users, currentClientId }: UserListProps): JSX.Element
   return (
     <div
       style={{
-        position: 'fixed',
-        top: '16px',
-        right: '16px',
+        width: '100%',
         background: 'rgba(255, 255, 255, 0.95)',
         border: '1px solid #ddd',
         borderRadius: '8px',
         padding: '12px 16px',
-        minWidth: '160px',
         boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
         fontFamily: 'sans-serif',
         fontSize: '14px',

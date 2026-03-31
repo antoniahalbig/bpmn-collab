@@ -34,15 +34,32 @@ export default function App(): JSX.Element {
         clientColor={clientColor}
         sendActivity={sendActivity}
       />
-      <UserList users={users} currentClientId={clientId} />
-      <CommentPanel
-        comments={comments}
-        selectedElementId={selectedElementId}
-        currentClientName={clientName}
-        onAdd={sendAddComment}
-        onDelete={sendDeleteComment}
-      />
-      <ActivityFeed activities={activities} />
+
+      <div
+        style={{
+          position: 'fixed',
+          top: 16,
+          right: 16,
+          bottom: 16,
+          width: 280,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 16,
+          alignItems: 'stretch',
+          zIndex: 20,
+          overflow: 'hidden',
+        }}
+      >
+        <UserList users={users} currentClientId={clientId} />
+        <CommentPanel
+          comments={comments}
+          selectedElementId={selectedElementId}
+          currentClientName={clientName}
+          onAdd={sendAddComment}
+          onDelete={sendDeleteComment}
+        />
+        <ActivityFeed activities={activities} />
+      </div>
     </div>
   )
 }

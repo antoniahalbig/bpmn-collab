@@ -71,16 +71,23 @@ const DEFAULT_BPMN_XML = `<?xml version="1.0" encoding="UTF-8"?>
 // Feature 2 — remote-change highlighting helpers
 
 type ElementSnapshot = Map<string, {
-  x: number; y: number; width: number; height: number; label: string | undefined
+  x: number; y: number; width: number; height: number;
+  label: string | undefined
+  waypoints: string | undefined
 }>
 
 function snapshotElements(modeler: any): ElementSnapshot {
   const snapshot: ElementSnapshot = new Map()
   modeler.get('elementRegistry').forEach((el: any) => {
     if (el.type === 'root') return
+    const waypoints = Array.isArray(el.waypoints)
+      ? el.waypoints.map((p: any) => `${p.x},${p.y}`).join(';')
+      : undefined
+
     snapshot.set(el.id, {
       x: el.x, y: el.y, width: el.width, height: el.height,
       label: el.businessObject?.name,
+      waypoints,
     })
   })
   return snapshot
@@ -94,7 +101,8 @@ function diffElements(before: ElementSnapshot, after: ElementSnapshot): string[]
     if (
       prev.x !== state.x || prev.y !== state.y ||
       prev.width !== state.width || prev.height !== state.height ||
-      prev.label !== state.label
+      prev.label !== state.label ||
+      prev.waypoints !== state.waypoints
     ) {
       changed.push(id)
     }
@@ -183,12 +191,11 @@ export function BpmnEditor({
 
         Object.entries(byElement).forEach(([elementId, elementComments]) => {
           const count = elementComments.length
-          // Always use a fixed neutral blue regardless of who added the comments.
           const BADGE_COLOR = '#3498db'
           try {
             const overlayId = overlays.add(elementId, 'comment-badge', {
-              position: { top: -12, right: -12 },
-              html: `<div class="comment-badge"
+              position: { top: -6, right: -6 },
+              html: `<div class="comment-badge" data-element-id="${elementId}"
                           style="background:${BADGE_COLOR};border-radius:50%;
                                  width:20px;height:20px;display:flex;
                                  align-items:center;justify-content:center;
@@ -275,6 +282,16 @@ export function BpmnEditor({
 
     init()
 
+    const handleOverlayClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null
+      const badge = target?.closest('.comment-badge') as HTMLElement | null
+      if (!badge) return
+      const elementId = badge.dataset.elementId
+      if (elementId) onElementSelect(elementId)
+    }
+
+    containerRef.current?.addEventListener('click', handleOverlayClick)
+
     // Notify bpmn-js when the container is resized so the canvas reflows.
     const resizeObserver = new ResizeObserver(() => {
       (modeler.get('canvas') as any).resized()
@@ -284,6 +301,7 @@ export function BpmnEditor({
     return () => {
       mounted = false
       syncOverlaysRef.current = null
+      containerRef.current?.removeEventListener('click', handleOverlayClick)
       resizeObserver.disconnect()
       onRemoteXml.current = null
       modeler.destroy()

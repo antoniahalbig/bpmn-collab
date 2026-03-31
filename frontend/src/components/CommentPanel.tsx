@@ -38,10 +38,9 @@ export function CommentPanel({
   }
 
   const panelStyle: React.CSSProperties = {
-    position: 'fixed',
-    top: 80,
-    right: 16,
-    width: 260,
+    width: '100%',
+    flex: 1,
+    minHeight: 0,
     background: '#fff',
     border: '1px solid #ddd',
     borderRadius: 8,
@@ -50,7 +49,6 @@ export function CommentPanel({
     fontSize: 13,
     display: 'flex',
     flexDirection: 'column',
-    maxHeight: 'calc(100vh - 100px)',
     overflow: 'hidden',
   }
 

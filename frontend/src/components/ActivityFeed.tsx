@@ -18,11 +18,8 @@ export function ActivityFeed({ activities }: ActivityFeedProps): JSX.Element {
   return (
     <div
       style={{
-        position: 'fixed',
-        bottom: 16,
-        left: 16,
-        width: 240,
-        maxHeight: 300,
+        width: '100%',
+        maxHeight: 220,
         overflowY: 'auto',
         background: '#fff',
         border: '1px solid #ddd',
