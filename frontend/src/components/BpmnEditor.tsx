@@ -72,6 +72,7 @@ const DEFAULT_BPMN_XML = `<?xml version="1.0" encoding="UTF-8"?>
 
 type ElementSnapshot = Map<string, {
   x: number; y: number; width: number; height: number;
+  type: string | undefined
   label: string | undefined
   waypoints: string | undefined
 }>
@@ -86,6 +87,7 @@ function snapshotElements(modeler: any): ElementSnapshot {
 
     snapshot.set(el.id, {
       x: el.x, y: el.y, width: el.width, height: el.height,
+      type: el.type,
       label: el.businessObject?.name,
       waypoints,
     })
@@ -101,6 +103,7 @@ function diffElements(before: ElementSnapshot, after: ElementSnapshot): string[]
     if (
       prev.x !== state.x || prev.y !== state.y ||
       prev.width !== state.width || prev.height !== state.height ||
+      prev.type !== state.type ||
       prev.label !== state.label ||
       prev.waypoints !== state.waypoints
     ) {
