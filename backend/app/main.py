@@ -1,3 +1,6 @@
+import uuid
+from datetime import datetime, timezone
+
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
 from .connection_manager import ConnectionManager
@@ -24,12 +27,14 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
     # Step 2: register the connection
     await manager.connect(websocket, client_id, name, color)
 
-    # Step 3: send init to this client
+    # Step 3: send init to this client (includes current diagram, comments, activities)
     await websocket.send_json(
         {
             "type": "init",
             "xml": manager.current_xml,
             "users": manager.get_user_list(),
+            "comments": manager.get_comments(),
+            "activities": manager.get_activities(),
         }
     )
 
@@ -47,9 +52,55 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
             if msg_type == "xml_update":
                 manager.current_xml = data["xml"]
                 await manager.broadcast(
-                    {"type": "xml_update", "xml": data["xml"]},
+                    {
+                        "type": "xml_update",
+                        "xml": data["xml"],
+                        "color": data.get("color"),
+                    },
                     exclude=websocket,
                 )
+
+            elif msg_type == "comment_add":
+                comment = {
+                    "id": str(uuid.uuid4()),
+                    "element_id": data["element_id"],
+                    "author": data["author"],
+                    "color": data["color"],
+                    "text": data["text"],
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+                manager.add_comment(comment)
+                await manager.broadcast(
+                    {
+                        "type": "comments_updated",
+                        "comments": manager.get_comments(),
+                    }
+                )
+
+            elif msg_type == "comment_delete":
+                manager.delete_comment(data["comment_id"])
+                await manager.broadcast(
+                    {
+                        "type": "comments_updated",
+                        "comments": manager.get_comments(),
+                    }
+                )
+
+            elif msg_type == "activity":
+                activity = {
+                    "user_name": data["user_name"],
+                    "user_color": data["user_color"],
+                    "action": data["action"],
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+                manager.add_activity(activity)
+                await manager.broadcast(
+                    {
+                        "type": "activity_update",
+                        "activities": manager.get_activities(),
+                    }
+                )
+
             # all other message types are silently ignored
 
     except WebSocketDisconnect:

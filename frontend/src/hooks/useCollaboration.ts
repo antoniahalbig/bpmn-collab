@@ -17,21 +17,44 @@ export interface CollabUser {
   color: string
 }
 
+export interface Comment {
+  id: string
+  element_id: string
+  author: string
+  color: string
+  text: string
+  timestamp: string
+}
+
+export interface Activity {
+  user_name: string
+  user_color: string
+  action: string
+  timestamp: string
+}
+
 export interface UseCollaborationResult {
   users: CollabUser[]
   clientId: string
   clientName: string
   clientColor: string
   sendXmlUpdate: (xml: string) => void
-  onRemoteXml: React.MutableRefObject<((xml: string) => void) | null>
+  onRemoteXml: React.MutableRefObject<((xml: string, color: string) => void) | null>
   // Resolves with the server's stored XML (or null if none exists yet) as soon
   // as the 'init' message arrives. BpmnEditor awaits this before loading any
   // diagram, so exactly one importXML call happens on startup with the right XML.
   initXmlPromise: Promise<string | null>
+  comments: Comment[]
+  activities: Activity[]
+  sendAddComment: (elementId: string, text: string) => void
+  sendDeleteComment: (commentId: string) => void
+  sendActivity: (action: string) => void
 }
 
 export function useCollaboration(): UseCollaborationResult {
   const [users, setUsers] = useState<CollabUser[]>([])
+  const [comments, setComments] = useState<Comment[]>([])
+  const [activities, setActivities] = useState<Activity[]>([])
 
   const { clientId, clientName, clientColor } = useMemo(() => {
     // Identity is generated fresh on every page load (tab open / hard refresh).
@@ -49,7 +72,7 @@ export function useCollaboration(): UseCollaborationResult {
     }
   }, [])
 
-  const onRemoteXml = useRef<((xml: string) => void) | null>(null)
+  const onRemoteXml = useRef<((xml: string, color: string) => void) | null>(null)
   const wsRef = useRef<WebSocket | null>(null)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const attemptRef = useRef(0)
@@ -74,10 +97,46 @@ export function useCollaboration(): UseCollaborationResult {
     debounceTimerRef.current = setTimeout(() => {
       const ws = wsRef.current
       if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: 'xml_update', xml }))
+        // Include the sender's colour so remote clients can highlight changed
+        // elements in the correct user colour (Bug 2 fix).
+        ws.send(JSON.stringify({ type: 'xml_update', xml, color: clientColor }))
       }
     }, 300)
   }, [])
+
+  // Stable helpers — safe to use [] deps because clientName/clientColor come
+  // from useMemo([]) (never change) and wsRef is a ref (always the same object).
+  const sendAddComment = useCallback((elementId: string, text: string): void => {
+    const ws = wsRef.current
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'comment_add',
+        element_id: elementId,
+        author: clientName,
+        color: clientColor,
+        text,
+      }))
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const sendDeleteComment = useCallback((commentId: string): void => {
+    const ws = wsRef.current
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'comment_delete', comment_id: commentId }))
+    }
+  }, [])
+
+  const sendActivity = useCallback((action: string): void => {
+    const ws = wsRef.current
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'activity',
+        user_name: clientName,
+        user_color: clientColor,
+        action,
+      }))
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     let cancelled = false
@@ -104,6 +163,8 @@ export function useCollaboration(): UseCollaborationResult {
         switch (data.type as string) {
           case 'init':
             setUsers(data.users as CollabUser[])
+            setComments(data.comments as Comment[] ?? [])
+            setActivities(data.activities as Activity[] ?? [])
             // Settle the Promise so BpmnEditor can load the correct diagram.
             // Called at most once; subsequent calls to a resolved Promise are no-ops.
             initXmlResolveRef.current?.(data.xml as string | null)
@@ -115,8 +176,17 @@ export function useCollaboration(): UseCollaborationResult {
             break
           case 'xml_update':
             if (onRemoteXml.current) {
-              onRemoteXml.current(data.xml as string)
+              onRemoteXml.current(
+                data.xml as string,
+                (data.color as string | undefined) ?? '#3498db',
+              )
             }
+            break
+          case 'comments_updated':
+            setComments(data.comments as Comment[])
+            break
+          case 'activity_update':
+            setActivities(data.activities as Activity[])
             break
           default:
             break
@@ -147,5 +217,18 @@ export function useCollaboration(): UseCollaborationResult {
     }
   }, [clientId, clientName, clientColor])
 
-  return { users, clientId, clientName, clientColor, sendXmlUpdate, onRemoteXml, initXmlPromise }
+  return {
+    users,
+    clientId,
+    clientName,
+    clientColor,
+    sendXmlUpdate,
+    onRemoteXml,
+    initXmlPromise,
+    comments,
+    activities,
+    sendAddComment,
+    sendDeleteComment,
+    sendActivity,
+  }
 }
