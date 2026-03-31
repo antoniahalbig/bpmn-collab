@@ -21,20 +21,14 @@ Everything is in-memory, i.e., no database, no persistence. The diagram resets w
 
 ## Running it
 
-You'll need Docker (>= 24) and Docker Compose v2. Node.js / npm only needed once to install frontend deps.
+You'll need Docker (>= 24) and Docker Compose v2. 
 
-**1. Install frontend dependencies** (only needed the first time):
-```bash
-cd frontend
-npm install
-```
-
-**2. Start everything from the repo root:**
+Start everything from the repo root:
 ```bash
 docker compose up --build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) and try it in a couple of tabs.
+Open [http://localhost:3000](http://localhost:3000) and try it in a couple of tabs. Each tab will act as a different user.
 
 ## How it works under the hood
 
