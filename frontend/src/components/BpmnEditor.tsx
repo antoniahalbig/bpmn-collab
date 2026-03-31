@@ -77,7 +77,7 @@ const DEFAULT_BPMN_XML = `<?xml version="1.0" encoding="UTF-8"?>
   </bpmndi:BPMNDiagram>
 </definitions>`
 
-// Helpers for remote-change highlighting
+// Helpers for feature 2: remote-change highlighting
 
 // Component 
 export function BpmnEditor({
@@ -103,7 +103,7 @@ export function BpmnEditor({
   } | null>(null)
   commentsRef.current = comments // updated on every render, no re-render side-effect
 
-  // When comments change (from any source), re-render the overlay badges.
+  // When comments change (from any source), re-render the overlay badges (feature 1)
   useEffect(() => {
     syncOverlaysRef.current?.(comments)
   }, [comments])
@@ -133,8 +133,7 @@ export function BpmnEditor({
       const canvas:    BpmnCanvas           = modeler.get('canvas')
       const registry:  BpmnElementRegistry  = modeler.get('elementRegistry')
 
-      // Feature 1: comment overlay badges 
-      // Track overlay IDs so we can cleanly remove them on each sync.
+      // Track overlay IDs so we can cleanly remove them on each sync (feature 1).
       let commentOverlayIds: string[] = []
 
       const syncOverlays = (allComments: Comment[]) => {
@@ -225,7 +224,7 @@ export function BpmnEditor({
 
       // Feature 2 + remote XML handler
       // Snapshot element states before and after each remote import to detect
-      // which elements changed, then briefly highlight them in the sender's colour.
+      // which elements changed, then briefly highlight them in the sender's color.
       onRemoteXml.current = async (xml: string, color: string) => {
         importCountRef.current++
         try {

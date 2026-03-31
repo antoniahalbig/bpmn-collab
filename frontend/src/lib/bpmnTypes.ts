@@ -6,8 +6,7 @@
  * here as the integration grows.
  */
 
-// ── Element shapes ────────────────────────────────────────────────────────────
-
+// Element shapes 
 export interface BpmnWaypoint {
   x: number
   y: number
@@ -35,8 +34,7 @@ export interface BpmnElement {
   businessObject?: BpmnBusinessObject
 }
 
-// ── Service: overlays ─────────────────────────────────────────────────────────
-
+// Service: overlays 
 export interface BpmnOverlayPosition {
   top?: number
   right?: number
@@ -54,8 +52,7 @@ export interface BpmnOverlays {
   remove(overlayId: string): void
 }
 
-// ── Service: canvas ───────────────────────────────────────────────────────────
-
+// Service: canvas 
 export interface BpmnCanvas {
   addMarker(element: BpmnElement, marker: string): void
   removeMarker(element: BpmnElement, marker: string): void
@@ -63,15 +60,13 @@ export interface BpmnCanvas {
   resized(): void
 }
 
-// ── Service: elementRegistry ──────────────────────────────────────────────────
-
+// Service: elementRegistry 
 export interface BpmnElementRegistry {
   forEach(callback: (element: BpmnElement) => void): void
   get(id: string): BpmnElement | undefined
 }
 
-// ── Event payloads ────────────────────────────────────────────────────────────
-
+// Event payloads
 export interface BpmnCommandContext {
   shape?: BpmnElement
   shapes?: BpmnElement[]
@@ -88,8 +83,7 @@ export interface BpmnSelectionChangedEvent {
   newSelection: BpmnElement[]
 }
 
-// ── Modeler instance ──────────────────────────────────────────────────────────
-
+// Modeler instance 
 export interface BpmnModelerInstance {
   get(service: 'overlays'): BpmnOverlays
   get(service: 'canvas'): BpmnCanvas
