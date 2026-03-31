@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 
-// bpmn-js has no official @types package — imports are untyped by design
+// bpmn-js has no official @types package — the constructor is imported untyped,
+// but the instance is immediately cast to our locally-declared BpmnModelerInstance.
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import BpmnModeler from 'bpmn-js/lib/Modeler'
@@ -9,8 +10,19 @@ import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css'
 
 import { Comment } from '../hooks/useCollaboration'
 import { describeCommand } from '../lib/describeCommand'
+import {
+  BpmnModelerInstance,
+  BpmnElement,
+  BpmnOverlays,
+  BpmnCanvas,
+  BpmnElementRegistry,
+  BpmnSelectionChangedEvent,
+} from '../lib/bpmnTypes'
+import { colors } from '../styles/tokens'
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// Color used for comment-count badge overlays on BPMN elements.
+// Defined at module scope so it is never recreated on each syncOverlays call.
+const COMMENT_BADGE_COLOR = colors.primary
 
 export interface BpmnEditorProps {
   sendXmlUpdate: (xml: string) => void
@@ -28,8 +40,7 @@ export interface BpmnEditorProps {
   sendActivity: (action: string) => void
 }
 
-// ─── Default diagram ─────────────────────────────────────────────────────────
-
+// Default diagram 
 // Minimal valid BPMN 2.0 diagram shown when no server diagram exists yet.
 const DEFAULT_BPMN_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
@@ -66,9 +77,7 @@ const DEFAULT_BPMN_XML = `<?xml version="1.0" encoding="UTF-8"?>
   </bpmndi:BPMNDiagram>
 </definitions>`
 
-// ─── Helpers (outside component so they are never recreated) ─────────────────
-
-// Feature 2 — remote-change highlighting helpers
+// Helpers for remote-change highlighting
 
 type ElementSnapshot = Map<string, {
   x: number; y: number; width: number; height: number;
@@ -77,12 +86,12 @@ type ElementSnapshot = Map<string, {
   waypoints: string | undefined
 }>
 
-function snapshotElements(modeler: any): ElementSnapshot {
+function snapshotElements(modeler: BpmnModelerInstance): ElementSnapshot {
   const snapshot: ElementSnapshot = new Map()
-  modeler.get('elementRegistry').forEach((el: any) => {
+  modeler.get('elementRegistry').forEach((el: BpmnElement) => {
     if (el.type === 'root') return
     const waypoints = Array.isArray(el.waypoints)
-      ? el.waypoints.map((p: any) => `${p.x},${p.y}`).join(';')
+      ? el.waypoints.map(p => `${p.x},${p.y}`).join(';')
       : undefined
 
     snapshot.set(el.id, {
@@ -113,8 +122,7 @@ function diffElements(before: ElementSnapshot, after: ElementSnapshot): string[]
   return changed
 }
 
-// ─── Component ───────────────────────────────────────────────────────────────
-
+// Component 
 export function BpmnEditor({
   sendXmlUpdate,
   onRemoteXml,
@@ -125,22 +133,10 @@ export function BpmnEditor({
   sendActivity,
 }: BpmnEditorProps): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null)
-  const modelerRef = useRef<InstanceType<typeof BpmnModeler> | null>(null)
-
-  // Counter-based guard instead of a boolean flag; handles concurrent remote
-  // imports correctly. commandStack.changed skips sendXmlUpdate while any
-  // importXML call is still in flight.
+  const modelerRef = useRef<BpmnModelerInstance | null>(null)
   const importCountRef = useRef(0)
-
-  // sendXmlUpdate is already stable (useCallback with [] in useCollaboration).
-  // Wrapping here too so the linter sees a stable dep in the effect below.
   const stableSendXmlUpdate = useCallback(sendXmlUpdate, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // syncOverlaysRef lets the comments useEffect call syncOverlays after init().
   const syncOverlaysRef = useRef<((c: Comment[]) => void) | null>(null)
-
-  // commentsRef always holds the latest comments prop so that closures inside
-  // the modeler init (which run only once) can access the current value.
   const commentsRef = useRef<Comment[]>(comments)
   commentsRef.current = comments // updated on every render, no re-render side-effect
 
@@ -153,7 +149,7 @@ export function BpmnEditor({
     if (!containerRef.current) return
 
     let mounted = true
-    const modeler = new BpmnModeler({ container: containerRef.current })
+    const modeler = new BpmnModeler({ container: containerRef.current }) as BpmnModelerInstance
     modelerRef.current = modeler
 
     const init = async () => {
@@ -169,13 +165,12 @@ export function BpmnEditor({
       }
       if (!mounted) return
 
-      // ── bpmn-js service references ─────────────────────────────────────────
-      // modeler.get() returns unknown because bpmn-js has no @types package.
-      const overlays  = modeler.get('overlays')  as any
-      const canvas    = modeler.get('canvas')    as any
-      const registry  = modeler.get('elementRegistry') as any
+      // bpmn-js service references 
+      const overlays:  BpmnOverlays         = modeler.get('overlays')
+      const canvas:    BpmnCanvas           = modeler.get('canvas')
+      const registry:  BpmnElementRegistry  = modeler.get('elementRegistry')
 
-      // ── Feature 1: comment overlay badges ─────────────────────────────────
+      // Feature 1: comment overlay badges 
       // Track overlay IDs so we can cleanly remove them on each sync.
       let commentOverlayIds: string[] = []
 
@@ -194,12 +189,11 @@ export function BpmnEditor({
 
         Object.entries(byElement).forEach(([elementId, elementComments]) => {
           const count = elementComments.length
-          const BADGE_COLOR = '#3498db'
           try {
             const overlayId = overlays.add(elementId, 'comment-badge', {
               position: { top: -6, right: -6 },
               html: `<div class="comment-badge" data-element-id="${elementId}"
-                          style="background:${BADGE_COLOR};border-radius:50%;
+                          style="background:${COMMENT_BADGE_COLOR};border-radius:50%;
                                  width:20px;height:20px;display:flex;
                                  align-items:center;justify-content:center;
                                  color:#fff;font-size:11px;font-weight:600;
@@ -212,15 +206,12 @@ export function BpmnEditor({
         })
       }
 
-      // Register ref so the comments useEffect can reach this function.
       syncOverlaysRef.current = syncOverlays
       // Sync immediately with whatever comments are already available.
       syncOverlays(commentsRef.current)
 
-      // ── commandStack.execute: log activity on local user actions ─────────
-      // Fires during the execute phase. We cannot issue commands here, so only
-      // describe the user action for the activity feed.
-      modeler.on('commandStack.execute', ({ command, context }: any) => {
+      // commandStack.execute: log activity on local user actions 
+      modeler.on('commandStack.execute', ({ command, context }) => {
         if (command === 'element.setColor') return
         if (importCountRef.current > 0) return
 
@@ -228,7 +219,7 @@ export function BpmnEditor({
         if (action) sendActivity(action)
       })
 
-      // ── commandStack.changed: save XML for any local edit or undo/redo ─────
+      // commandStack.changed: save XML for any local edit or undo/redo 
       modeler.on('commandStack.changed', async () => {
         if (importCountRef.current > 0) return
 
@@ -240,13 +231,13 @@ export function BpmnEditor({
         }
       })
 
-      // ── Feature 1: selection tracking ─────────────────────────────────────
-      modeler.on('selection.changed', ({ newSelection }: any) => {
+      // Feature 1: selection tracking 
+      modeler.on('selection.changed', ({ newSelection }: BpmnSelectionChangedEvent) => {
         const el = newSelection[0] ?? null
         onElementSelect(el ? el.id : null)
       })
 
-      // ── Feature 2 + remote XML handler ────────────────────────────────────
+      // Feature 2 + remote XML handler
       // Snapshot element states before and after each remote import to detect
       // which elements changed, then briefly highlight them in the sender's colour.
       onRemoteXml.current = async (xml: string, color: string) => {
@@ -262,7 +253,7 @@ export function BpmnEditor({
             if (!el) return
             // Set the sender's colour as a CSS custom property on the element's
             // graphics group so the .remote-highlight CSS rule can use it.
-            const gfx = canvas.getGraphics(el) as SVGElement | null
+            const gfx = canvas.getGraphics(el)
             if (gfx) gfx.style.setProperty('--highlight-color', color)
             canvas.addMarker(el, 'remote-highlight')
             setTimeout(() => {
@@ -297,7 +288,7 @@ export function BpmnEditor({
 
     // Notify bpmn-js when the container is resized so the canvas reflows.
     const resizeObserver = new ResizeObserver(() => {
-      (modeler.get('canvas') as any).resized()
+      modeler.get('canvas').resized()
     })
     resizeObserver.observe(containerRef.current)
 

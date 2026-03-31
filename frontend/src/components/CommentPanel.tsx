@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { Comment } from '../hooks/useCollaboration'
+import { relativeTime } from '../lib/relativeTime'
+import { colors, shadows, radii, fonts } from '../styles/tokens'
 
 interface CommentPanelProps {
   comments: Comment[]
@@ -7,14 +9,6 @@ interface CommentPanelProps {
   currentClientName: string
   onAdd: (elementId: string, text: string) => void
   onDelete: (commentId: string) => void
-}
-
-function relativeTime(iso: string): string {
-  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
-  if (diff < 60) return 'just now'
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
-  return `${Math.floor(diff / 86400)}d ago`
 }
 
 export function CommentPanel({
@@ -37,53 +31,45 @@ export function CommentPanel({
     setDraft('')
   }
 
-  const panelStyle: React.CSSProperties = {
-    width: '100%',
-    flex: 1,
-    minHeight: 0,
-    background: '#fff',
-    border: '1px solid #ddd',
-    borderRadius: 8,
-    boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-    fontFamily: 'sans-serif',
-    fontSize: 13,
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-  }
-
-  const headerStyle: React.CSSProperties = {
-    padding: '10px 12px',
-    borderBottom: '1px solid #eee',
-    fontWeight: 600,
-    color: '#333',
-    fontSize: 13,
-    flexShrink: 0,
-  }
-
-  const bodyStyle: React.CSSProperties = {
-    overflowY: 'auto',
-    flex: 1,
-    padding: '8px 12px',
-  }
-
-  const footerStyle: React.CSSProperties = {
-    padding: '8px 12px',
-    borderTop: '1px solid #eee',
-    flexShrink: 0,
-  }
-
   return (
-    <div style={panelStyle}>
-      <div style={headerStyle}>💬 Comments</div>
+    <div
+      style={{
+        width: '100%',
+        flex: 1,
+        minHeight: 0,
+        background: colors.panelBg,
+        border: `1px solid ${colors.border}`,
+        borderRadius: radii.md,
+        boxShadow: shadows.panel,
+        fontFamily: fonts.family,
+        fontSize: fonts.size.md,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          padding: '10px 12px',
+          borderBottom: `1px solid ${colors.borderSubtle}`,
+          fontWeight: 600,
+          color: colors.textPrimary,
+          fontSize: fonts.size.md,
+          flexShrink: 0,
+        }}
+      >
+        💬 Comments
+      </div>
 
-      <div style={bodyStyle}>
+      {/* Body */}
+      <div style={{ overflowY: 'auto', flex: 1, padding: '8px 12px' }}>
         {!selectedElementId ? (
-          <p style={{ color: '#999', margin: '8px 0', fontSize: 12 }}>
+          <p style={{ color: colors.textPlaceholder, margin: '8px 0', fontSize: fonts.size.base }}>
             Select an element to view or add comments.
           </p>
         ) : elementComments.length === 0 ? (
-          <p style={{ color: '#999', margin: '8px 0', fontSize: 12 }}>
+          <p style={{ color: colors.textPlaceholder, margin: '8px 0', fontSize: fonts.size.base }}>
             No comments on this element yet.
           </p>
         ) : (
@@ -93,7 +79,7 @@ export function CommentPanel({
               style={{
                 marginBottom: 10,
                 paddingBottom: 10,
-                borderBottom: '1px solid #f0f0f0',
+                borderBottom: `1px solid ${colors.borderFaint}`,
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
@@ -106,8 +92,8 @@ export function CommentPanel({
                     flexShrink: 0,
                   }}
                 />
-                <span style={{ fontWeight: 600, color: '#333' }}>{comment.author}</span>
-                <span style={{ color: '#aaa', fontSize: 11, marginLeft: 'auto' }}>
+                <span style={{ fontWeight: 600, color: colors.textPrimary }}>{comment.author}</span>
+                <span style={{ color: colors.textDim, fontSize: fonts.size.sm, marginLeft: 'auto' }}>
                   {relativeTime(comment.timestamp)}
                 </span>
                 {comment.author === currentClientName && (
@@ -118,19 +104,19 @@ export function CommentPanel({
                       border: 'none',
                       background: 'none',
                       cursor: 'pointer',
-                      color: '#ccc',
+                      color: colors.textDim,
                       padding: 0,
-                      fontSize: 14,
+                      fontSize: fonts.size.lg,
                       lineHeight: 1,
                     }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#e74c3c')}
-                    onMouseLeave={e => (e.currentTarget.style.color = '#ccc')}
+                    onMouseEnter={e => (e.currentTarget.style.color = colors.danger)}
+                    onMouseLeave={e => (e.currentTarget.style.color = colors.textDim)}
                   >
                     ×
                   </button>
                 )}
               </div>
-              <p style={{ margin: 0, color: '#555', lineHeight: 1.4, wordBreak: 'break-word' }}>
+              <p style={{ margin: 0, color: colors.textMuted, lineHeight: 1.4, wordBreak: 'break-word' }}>
                 {comment.text}
               </p>
             </div>
@@ -138,8 +124,15 @@ export function CommentPanel({
         )}
       </div>
 
+      {/* Footer — only shown when an element is selected */}
       {selectedElementId && (
-        <div style={footerStyle}>
+        <div
+          style={{
+            padding: '8px 12px',
+            borderTop: `1px solid ${colors.borderSubtle}`,
+            flexShrink: 0,
+          }}
+        >
           <textarea
             value={draft}
             onChange={e => setDraft(e.target.value)}
@@ -152,10 +145,10 @@ export function CommentPanel({
               width: '100%',
               boxSizing: 'border-box',
               resize: 'none',
-              border: '1px solid #ddd',
-              borderRadius: 4,
+              border: `1px solid ${colors.border}`,
+              borderRadius: radii.sm,
               padding: '6px 8px',
-              fontSize: 12,
+              fontSize: fonts.size.base,
               fontFamily: 'inherit',
               outline: 'none',
             }}
@@ -167,13 +160,13 @@ export function CommentPanel({
               marginTop: 6,
               width: '100%',
               padding: '6px 0',
-              background: draft.trim() ? '#3498db' : '#ccc',
-              color: '#fff',
+              background: draft.trim() ? colors.primary : colors.textDim,
+              color: colors.panelBg,
               border: 'none',
-              borderRadius: 4,
+              borderRadius: radii.sm,
               cursor: draft.trim() ? 'pointer' : 'default',
               fontWeight: 600,
-              fontSize: 12,
+              fontSize: fonts.size.base,
               transition: 'background 0.15s',
             }}
           >

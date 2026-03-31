@@ -35,6 +35,7 @@ export default function App(): JSX.Element {
         sendActivity={sendActivity}
       />
 
+      {/* Side panel — fixed overlay on the right, stacked vertically */}
       <div
         style={{
           position: 'fixed',

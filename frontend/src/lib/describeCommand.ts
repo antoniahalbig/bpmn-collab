@@ -1,15 +1,17 @@
+import { BpmnCommandContext } from './bpmnTypes'
+
 /**
  * Maps a bpmn-js command + context to a human-readable action string.
  * Returns null for commands that should not appear in the activity feed
  * (e.g. internal commands like element.setColor).
  */
-export function describeCommand(command: string, context: any): string | null {
+export function describeCommand(command: string, context: BpmnCommandContext): string | null {
   const shape = context.shape ?? context.shapes?.[0]
   const conn  = context.connection ?? context.connections?.[0]
   const el    = shape ?? conn
   if (!el) return null
 
-  const bpmnType = (el.type ?? '').split(':')[1] ?? ''
+  const bpmnType = el.type.split(':')[1] ?? ''
   const typeNames: Record<string, string> = {
     Task:             'task',
     StartEvent:       'start event',

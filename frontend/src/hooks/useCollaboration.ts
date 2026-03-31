@@ -27,6 +27,7 @@ export interface Comment {
 }
 
 export interface Activity {
+  id: string
   user_name: string
   user_color: string
   action: string

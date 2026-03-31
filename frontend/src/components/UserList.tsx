@@ -1,11 +1,8 @@
-export interface UserListUser {
-  client_id: string
-  name: string
-  color: string
-}
+import { CollabUser } from '../hooks/useCollaboration'
+import { colors, shadows, radii, fonts } from '../styles/tokens'
 
-export interface UserListProps {
-  users: UserListUser[]
+interface UserListProps {
+  users: CollabUser[]
   currentClientId: string
 }
 
@@ -14,47 +11,41 @@ export function UserList({ users, currentClientId }: UserListProps): JSX.Element
     <div
       style={{
         width: '100%',
-        background: 'rgba(255, 255, 255, 0.95)',
-        border: '1px solid #ddd',
-        borderRadius: '8px',
+        background: colors.panelBgTranslucent,
+        border: `1px solid ${colors.border}`,
+        borderRadius: radii.md,
         padding: '12px 16px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-        fontFamily: 'sans-serif',
-        fontSize: '14px',
+        boxShadow: shadows.panel,
+        fontFamily: fonts.family,
+        fontSize: fonts.size.lg,
       }}
     >
-      <div
-        style={{
-          fontWeight: 600,
-          marginBottom: '10px',
-          color: '#333',
-        }}
-      >
+      <div style={{ fontWeight: 600, marginBottom: 10, color: colors.textPrimary }}>
         Online ({users.length})
       </div>
-      {users.map((user) => (
+      {users.map(user => (
         <div
           key={user.client_id}
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            marginBottom: '6px',
+            gap: 8,
+            marginBottom: 6,
           }}
         >
           <div
             style={{
-              width: '12px',
-              height: '12px',
+              width: 12,
+              height: 12,
               borderRadius: '50%',
               backgroundColor: user.color,
               flexShrink: 0,
             }}
           />
-          <span style={{ color: '#444' }}>
+          <span style={{ color: colors.textSecondary }}>
             {user.name}
             {user.client_id === currentClientId && (
-              <span style={{ color: '#888', fontSize: '12px' }}> (you)</span>
+              <span style={{ color: colors.textFaint, fontSize: fonts.size.base }}> (you)</span>
             )}
           </span>
         </div>

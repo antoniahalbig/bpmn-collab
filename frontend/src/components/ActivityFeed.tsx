@@ -1,15 +1,9 @@
 import { Activity } from '../hooks/useCollaboration'
+import { relativeTime } from '../lib/relativeTime'
+import { colors, shadows, radii, fonts } from '../styles/tokens'
 
 interface ActivityFeedProps {
   activities: Activity[]  // newest-last from server; reversed for display
-}
-
-function relativeTime(iso: string): string {
-  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
-  if (diff < 60) return 'just now'
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
-  return `${Math.floor(diff / 86400)}d ago`
 }
 
 export function ActivityFeed({ activities }: ActivityFeedProps): JSX.Element {
@@ -21,40 +15,42 @@ export function ActivityFeed({ activities }: ActivityFeedProps): JSX.Element {
         width: '100%',
         maxHeight: 220,
         overflowY: 'auto',
-        background: '#fff',
-        border: '1px solid #ddd',
-        borderRadius: 8,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-        fontFamily: 'sans-serif',
-        fontSize: 12,
+        background: colors.panelBg,
+        border: `1px solid ${colors.border}`,
+        borderRadius: radii.md,
+        boxShadow: shadows.panel,
+        fontFamily: fonts.family,
+        fontSize: fonts.size.base,
       }}
     >
       <div
         style={{
           padding: '8px 10px',
-          borderBottom: '1px solid #eee',
+          borderBottom: `1px solid ${colors.borderSubtle}`,
           fontWeight: 600,
-          color: '#333',
-          fontSize: 12,
+          color: colors.textPrimary,
+          fontSize: fonts.size.base,
           position: 'sticky',
           top: 0,
-          background: '#fff',
+          background: colors.panelBg,
         }}
       >
         Activity
       </div>
       {reversed.length === 0 ? (
-        <p style={{ color: '#aaa', margin: '8px 10px', fontSize: 11 }}>No activity yet.</p>
+        <p style={{ color: colors.textDim, margin: '8px 10px', fontSize: fonts.size.sm }}>
+          No activity yet.
+        </p>
       ) : (
         reversed.map((entry, i) => (
           <div
-            key={i}
+            key={entry.id}
             style={{
               display: 'flex',
               alignItems: 'flex-start',
               gap: 7,
               padding: '6px 10px',
-              borderBottom: i < reversed.length - 1 ? '1px solid #f5f5f5' : 'none',
+              borderBottom: i < reversed.length - 1 ? `1px solid ${colors.borderFaintest}` : 'none',
             }}
           >
             <span
@@ -67,11 +63,11 @@ export function ActivityFeed({ activities }: ActivityFeedProps): JSX.Element {
                 marginTop: 3,
               }}
             />
-            <span style={{ color: '#444', flex: 1, lineHeight: 1.4 }}>
-              <strong style={{ color: '#222' }}>{entry.user_name}</strong>{' '}
+            <span style={{ color: colors.textSecondary, flex: 1, lineHeight: 1.4 }}>
+              <strong style={{ color: colors.textStrong }}>{entry.user_name}</strong>{' '}
               {entry.action}
             </span>
-            <span style={{ color: '#bbb', fontSize: 10, flexShrink: 0, marginTop: 2 }}>
+            <span style={{ color: colors.textDimmer, fontSize: fonts.size.xs, flexShrink: 0, marginTop: 2 }}>
               {relativeTime(entry.timestamp)}
             </span>
           </div>

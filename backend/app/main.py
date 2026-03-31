@@ -88,6 +88,7 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
 
             elif msg_type == "activity":
                 activity = {
+                    "id": str(uuid.uuid4()),
                     "user_name": data["user_name"],
                     "user_color": data["user_color"],
                     "action": data["action"],
