@@ -169,7 +169,7 @@ export function BpmnEditor({
       }
 
       syncOverlaysRef.current = syncOverlays
-      // Sync immediately with whatever comments are already available.
+      // Sync immediately with whatever comments are already available (feature 1)
       syncOverlays(commentsRef.current)
 
       // commandStack.execute: log activity on local user actions 

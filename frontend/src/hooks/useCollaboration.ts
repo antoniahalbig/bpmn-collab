@@ -89,7 +89,7 @@ export function useCollaboration(): UseCollaborationResult {
   // useCallback with [] so this function has a stable identity across renders.
   // Without this, BpmnEditor's useEffect would re-run on every render (e.g.
   // when setUsers fires), destroy the modeler, and reload the stale initial XML
-  // — resetting all edits. Safe to use [] because the function body only reads
+  // resetting all edits. Safe to use [] because the function body only reads
   // refs (debounceTimerRef, wsRef), never closed-over render-cycle values.
   const sendXmlUpdate = useCallback((xml: string): void => {
     if (debounceTimerRef.current !== null) {
@@ -105,7 +105,7 @@ export function useCollaboration(): UseCollaborationResult {
     }, 300)
   }, [])
 
-  // Stable helpers — safe to use [] deps because clientName/clientColor come
+  // Stable helpers, safe to use [] deps because clientName/clientColor come
   // from useMemo([]) (never change) and wsRef is a ref (always the same object).
   const sendAddComment = useCallback((elementId: string, text: string): void => {
     const ws = wsRef.current
