@@ -10,9 +10,9 @@ import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css'
 
 import { Comment } from '../hooks/useCollaboration'
 import { describeCommand } from '../lib/describeCommand'
+import { snapshotElements, diffElements } from '../lib/bpmnChangeDetection'
 import {
   BpmnModelerInstance,
-  BpmnElement,
   BpmnOverlays,
   BpmnCanvas,
   BpmnElementRegistry,
@@ -78,49 +78,6 @@ const DEFAULT_BPMN_XML = `<?xml version="1.0" encoding="UTF-8"?>
 </definitions>`
 
 // Helpers for remote-change highlighting
-
-type ElementSnapshot = Map<string, {
-  x: number; y: number; width: number; height: number;
-  type: string | undefined
-  label: string | undefined
-  waypoints: string | undefined
-}>
-
-function snapshotElements(modeler: BpmnModelerInstance): ElementSnapshot {
-  const snapshot: ElementSnapshot = new Map()
-  modeler.get('elementRegistry').forEach((el: BpmnElement) => {
-    if (el.type === 'root') return
-    const waypoints = Array.isArray(el.waypoints)
-      ? el.waypoints.map(p => `${p.x},${p.y}`).join(';')
-      : undefined
-
-    snapshot.set(el.id, {
-      x: el.x, y: el.y, width: el.width, height: el.height,
-      type: el.type,
-      label: el.businessObject?.name,
-      waypoints,
-    })
-  })
-  return snapshot
-}
-
-function diffElements(before: ElementSnapshot, after: ElementSnapshot): string[] {
-  const changed: string[] = []
-  after.forEach((state, id) => {
-    const prev = before.get(id)
-    if (!prev) { changed.push(id); return }
-    if (
-      prev.x !== state.x || prev.y !== state.y ||
-      prev.width !== state.width || prev.height !== state.height ||
-      prev.type !== state.type ||
-      prev.label !== state.label ||
-      prev.waypoints !== state.waypoints
-    ) {
-      changed.push(id)
-    }
-  })
-  return changed
-}
 
 // Component 
 export function BpmnEditor({

@@ -15,6 +15,13 @@ export interface BpmnWaypoint {
 
 export interface BpmnBusinessObject {
   name?: string
+  $type?: string
+  eventDefinitions?: BpmnBusinessObject[]
+  loopCharacteristics?: BpmnBusinessObject
+  triggeredByEvent?: boolean
+  cancelActivity?: boolean
+  isInterrupting?: boolean
+  isExpanded?: boolean
 }
 
 export interface BpmnElement {
