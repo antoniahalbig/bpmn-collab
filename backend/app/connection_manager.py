@@ -42,7 +42,7 @@ class ConnectionManager:
             for cid, info in self.clients.items()
         ]
 
-    # ── Comments ──────────────────────────────────────────────────────────────
+    # Comments
 
     def add_comment(self, comment: dict) -> None:
         self.comments.append(comment)
@@ -53,7 +53,7 @@ class ConnectionManager:
     def get_comments(self) -> list[dict]:
         return list(self.comments)
 
-    # ── Activities ────────────────────────────────────────────────────────────
+    # Activities
 
     def add_activity(self, activity: dict) -> None:
         self.activities.append(activity)
